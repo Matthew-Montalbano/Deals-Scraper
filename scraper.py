@@ -5,6 +5,7 @@ from tkinter import *
 
 
 class Page(Frame):
+    '''Creates a frame'''
     def __init__(self, *args, **kwargs):
         Frame.__init__(self, *args, **kwargs)
 
@@ -13,7 +14,9 @@ class Page(Frame):
 
 
 class slickPage(Page):
-    def __init__(self,  deals, *args, **kwargs): ##Take param deals for different pages
+    '''Creates frame for slickdeals website. Displays all the
+       deals and their prices'''
+    def __init__(self,  deals, *args, **kwargs):
         Page.__init__(self, *args, **kwargs)
         self.deals = deals
         self.createLabels()
@@ -100,6 +103,9 @@ class Main(Frame):
         slickPages[0].show()
 
     def createPages(self, deals, pageType):
+        '''Creates frames with 20 items per frame.
+           Returns: pages, which is a dictionary of frames for each
+           specific page type.'''
         pages = {}
         # Create page frame and place in main frame
         for page in deals:
@@ -111,21 +117,22 @@ class Main(Frame):
             if page == 0 and len(pages) > 1:
                 forwardButton = Button(pages[page], text='Next',
                                        command=pages[page+1].lift)
-                forwardButton.grid(row=22, column=10)
+                forwardButton.grid(row=22, column=0, sticky=W, padx=50)
             elif page == len(pages) - 1 and len(pages) > 1:
                 backButton = Button(pages[page], text='Back',
                                     command=pages[page-1].lift)
-                backButton.grid(row=22, column=9)
+                backButton.grid(row=22, column=0, sticky=W, padx=10)
             elif len(pages) == 1:
                 break
             else:
                 forwardButton = Button(pages[page], text='Next',
                                        command=pages[page+1].lift)
-                forwardButton.grid(row=22, column=10)
+                forwardButton.grid(row=22, column=0, sticky=W, padx=50)
                 backButton = Button(pages[page], text='Back',
                                     command=pages[page-1].lift)
-                backButton.grid(row=22, column=9)
+                backButton.grid(row=22, column=0, sticky=W, padx=10)
         return pages
+
 
 def slickScraper():
     '''Scrapes all the front page deals from slickdeals.net. Breaks
@@ -146,16 +153,7 @@ def slickScraper():
         link = item.get('href')
         deal.append(link)
         deals.append(deal)
-    pages = {}
-    i = 0
-    # Breaks up deals into pages of 20 items and places into page[deal] dict
-    for page in range(int(len(deals)/20)):
-        if i + 20 < len(deals):
-            pages[page] = deals[i:i+20]
-            i += 20
-        else:
-            pages[page] = deals[i:]
-    return pages
+    return splitPages(deals)
 
 
 def redditScraper():
@@ -177,10 +175,7 @@ def redditScraper():
             continue
     soup = bs4.BeautifulSoup(res.text, 'html.parser')
     # Finds all deals and their links
-    for item in soup.find_all(class_='title may-blank '):
-        links.append(item.get('href'))
-        temp.append(str(item))
-    for item in soup.find_all(class_='title may-blank affiliate'):
+    for item in soup.find_all(class_='title may-blank outbound '):
         links.append(item.get('href'))
         temp.append(str(item))
     findname = re.compile('\>(.+)\<')
@@ -194,6 +189,13 @@ def redditScraper():
             price = 'No price'
         deal = re.findall(findname, item) + [price] + [links[num]]
         deals.append(deal)
+    return splitPages(deals)
+
+
+def splitPages(deals):
+    '''Splits deal list into 20 items per key in a dictionary.
+       Returns: pages, which is a dictionary. Key represents the
+       page number, value is a list of deals in that page.'''
     pages = {}
     numPages = int(len(deals)/20)
     if numPages == 0:
